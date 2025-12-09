@@ -1,0 +1,14 @@
+# Dependencies - collaborators will install these
+node_modules/
+venv/
+
+# Environment variables - contains API keys
+.env
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Build outputs
+dist/
+build/
