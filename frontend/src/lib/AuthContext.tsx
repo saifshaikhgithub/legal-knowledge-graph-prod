@@ -1,7 +1,7 @@
 /**
  * Authentication Context for managing user auth state across the app.
  */
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 
 import { api } from './api';
