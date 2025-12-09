@@ -117,13 +117,3 @@ MIT License - feel free to use this project for your own investigations!
 ## 🤝 Contributing
 
 Contributions welcome! Please open an issue or PR.
-
-## 📧 Contact
-
-**Developer**: Saif Shaikh  
-**GitHub**: [@saifshaikhgithub](https://github.com/saifshaikhgithub)  
-**Email**: worldtourmydream@gmail.com
-
----
-
-Built with ❤️ using AI-powered graph intelligence
