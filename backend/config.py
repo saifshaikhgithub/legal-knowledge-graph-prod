@@ -82,9 +82,9 @@ CHAT_RATE_LIMIT_PER_MIN = int(os.getenv("CHAT_RATE_LIMIT_PER_MIN", "20"))
 DEBUG_ERRORS = _bool("DEBUG_ERRORS", not IS_PRODUCTION)
 
 # ---- Billing (Razorpay subscriptions, INR) ----
-RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "")
-RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
-RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "").strip()  # pasted values often carry a newline
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "").strip()
+RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "").strip()
 # Optional: plan ids from the Razorpay dashboard. Left empty, matching plans are found or created on first use.
 RAZORPAY_PLAN_MONTHLY = os.getenv("RAZORPAY_PLAN_MONTHLY", "")
 RAZORPAY_PLAN_YEARLY = os.getenv("RAZORPAY_PLAN_YEARLY", "")
