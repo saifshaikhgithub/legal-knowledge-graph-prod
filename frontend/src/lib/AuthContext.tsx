@@ -1,113 +1,66 @@
 /**
- * Authentication Context for managing user auth state across the app.
+ * Authentication state shared across the app.
  */
-import { createContext, useContext, useState, useEffect } from "react";
-import type { ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import { api, setUnauthorizedHandler, tokenStore, type User } from './api';
 
-import { api } from './api';
-
-interface User {
-  id: number;
-  email: string;
-}
+type RegisterData = Parameters<typeof api.register>[0];
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => void;
   isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_KEY = 'crime_gpt_token';
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !!tokenStore.get());
 
-  // Check for existing token on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem(TOKEN_KEY);
-    if (storedToken) {
-      setToken(storedToken);
-      // Verify token and get user info
-      api.getCurrentUser(storedToken)
-        .then((userData) => {
-          setUser(userData);
-        })
-        .catch(() => {
-          // Token invalid, clear it
-          localStorage.removeItem(TOKEN_KEY);
-          setToken(null);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
-      setIsLoading(false);
-    }
+  const logout = useCallback(() => {
+    tokenStore.clear();
+    setUser(null);
   }, []);
 
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    if (!tokenStore.get()) return;
+    api.me()
+      .then(setUser)
+      .catch(() => tokenStore.clear())
+      .finally(() => setIsLoading(false));
+  }, [logout]);
+
+  const acceptToken = async (token: string) => {
+    tokenStore.set(token);
+    setUser(await api.me());
+  };
+
   const login = async (email: string, password: string) => {
-    const response = await api.login(email, password);
-    const newToken = response.access_token;
-    
-    localStorage.setItem(TOKEN_KEY, newToken);
-    setToken(newToken);
-    
-    // Get user info
-    const userData = await api.getCurrentUser(newToken);
-    setUser(userData);
+    const { access_token } = await api.login(email, password);
+    await acceptToken(access_token);
   };
 
-  const register = async (email: string, password: string) => {
-    const response = await api.register(email, password);
-    const newToken = response.access_token;
-    
-    localStorage.setItem(TOKEN_KEY, newToken);
-    setToken(newToken);
-    
-    // Get user info
-    const userData = await api.getCurrentUser(newToken);
-    setUser(userData);
-  };
-
-  const logout = () => {
-    localStorage.removeItem(TOKEN_KEY);
-    setToken(null);
-    setUser(null);
-  };
-
-  const value: AuthContextType = {
-    user,
-    token,
-    isLoading,
-    login,
-    register,
-    logout,
-    isAuthenticated: !!token && !!user,
+  const register = async (data: RegisterData) => {
+    const { access_token } = await api.register(data);
+    await acceptToken(access_token);
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated: !!user, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
-};
-
-export const getStoredToken = (): string | null => {
-  return localStorage.getItem(TOKEN_KEY);
 };

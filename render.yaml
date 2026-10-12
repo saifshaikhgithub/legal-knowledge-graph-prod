@@ -1,15 +1,40 @@
 services:
   - type: web
     name: legal-knowledge-graph-api
-    env: python
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.9.0
+        value: 3.11.9
+      - key: ENVIRONMENT
+        value: production
       - key: SECRET_KEY
         generateValue: true
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: REASONING_MODEL
+        value: nvidia/nemotron-3-super-120b-a12b
+      - key: EXTRACTION_MODEL
+        value: nvidia/nemotron-3.5-lightning-30b-a3b
+      - key: VISION_MODEL
+        value: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+      # Free Postgres from Neon (neon.tech) or Supabase - Render's own disk is wiped on every deploy.
+      - key: DATABASE_URL
+        sync: false
       - key: ALLOWED_ORIGINS
         value: https://legal-knowledge-graph-frontend.vercel.app,http://localhost:5173
-      - key: GEMINI_API_KEY
+      # Set to require an agency invite code at sign-up, e.g. PILOT-METRO-2026
+      - key: INVITE_CODES
+        sync: false
+      # Razorpay subscriptions (see backend/.env.example)
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: PRO_EMAILS
         sync: false

@@ -1,276 +1,71 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Chat } from './components/Chat';
-import { Sidebar } from './components/Sidebar';
-import { GraphView } from './components/GraphView';
-import { Login } from './components/Login';
-import { Register } from './components/Register';
-import { api, type ChatMessage, type GraphNode, type GraphEdge, type Case } from './lib/api';
+import { lazy, Suspense } from 'react';
+import type { ReactNode } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from './lib/ThemeContext';
 import { AuthProvider, useAuth } from './lib/AuthContext';
-import './index.css';
+import { BillingProvider } from './lib/BillingContext';
+import { UpgradeModal, WelcomeProModal } from './components/billing/UpgradeModal';
 
-type Tab = 'chat' | 'graph';
+// Route-level code splitting: the graph engine only loads inside the workspace.
+const Landing = lazy(() => import('./pages/Landing').then((m) => ({ default: m.Landing })));
+const Login = lazy(() => import('./pages/Auth').then((m) => ({ default: m.Login })));
+const Register = lazy(() => import('./pages/Auth').then((m) => ({ default: m.Register })));
+const Workspace = lazy(() => import('./pages/Workspace').then((m) => ({ default: m.Workspace })));
+const Pricing = lazy(() => import('./pages/Pricing').then((m) => ({ default: m.Pricing })));
+const Billing = lazy(() => import('./pages/Billing').then((m) => ({ default: m.Billing })));
+const Legal = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Legal })));
 
-// Protected route wrapper
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+const FullScreenLoader = () => (
+  <div className="grid h-full place-items-center bg-background">
+    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+  </div>
+);
+
+function Protected({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <>{children}</>;
+  if (isLoading) return <FullScreenLoader />;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
-// Main app content (protected)
-function AppContent() {
-  const [activeTab, setActiveTab] = useState<Tab>('chat');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [graphNodes, setGraphNodes] = useState<GraphNode[]>([]);
-  const [graphEdges, setGraphEdges] = useState<GraphEdge[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Case management state
-  const [cases, setCases] = useState<Case[]>([]);
-  const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null);
-  const [isCasesLoading, setIsCasesLoading] = useState(true);
-
-  // Load cases on mount
-  useEffect(() => {
-    loadCases();
-  }, []);
-
-  // Load case data when selected case changes
-  useEffect(() => {
-    if (selectedCaseId) {
-      loadCaseData(selectedCaseId);
-    } else {
-      setMessages([]);
-      setGraphNodes([]);
-      setGraphEdges([]);
-    }
-  }, [selectedCaseId]);
-
-  // Load graph when switching to graph tab
-  useEffect(() => {
-    if (activeTab === 'graph' && selectedCaseId) {
-      loadGraph();
-    }
-  }, [activeTab, selectedCaseId]);
-
-  const loadCases = async () => {
-    setIsCasesLoading(true);
-    try {
-      const userCases = await api.getCases();
-      setCases(userCases);
-      // Select first case if available
-      if (userCases.length > 0 && !selectedCaseId) {
-        setSelectedCaseId(userCases[0].id);
-      }
-    } catch (error) {
-      console.error('Failed to load cases:', error);
-    } finally {
-      setIsCasesLoading(false);
-    }
-  };
-
-  const loadCaseData = async (caseId: number) => {
-    try {
-      const caseDetail = await api.getCase(caseId);
-      // Convert messages to ChatMessage format
-      const chatMessages: ChatMessage[] = caseDetail.messages.map((msg) => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      }));
-      setMessages(chatMessages);
-
-      // Also load graph
-      await loadGraph();
-    } catch (error) {
-      console.error('Failed to load case data:', error);
-    }
-  };
-
-  const loadGraph = async () => {
-    if (!selectedCaseId) return;
-    try {
-      const data = await api.getGraph(selectedCaseId);
-      setGraphNodes(data.nodes);
-      setGraphEdges(data.edges);
-    } catch (error) {
-      console.error('Failed to load graph:', error);
-    }
-  };
-
-  const handleSendMessage = async (message: string, fileContent?: string) => {
-    if (!selectedCaseId) {
-      alert('Please select or create a case first');
-      return;
-    }
-
-    // Add user message immediately
-    const userMessage: ChatMessage = { role: 'user', content: message };
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-
-    try {
-      // Send to API with case ID
-      const response = await api.sendMessage(selectedCaseId, message, fileContent);
-
-      // Add assistant message
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        content: response.assistant_message,
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-
-      // Reload graph if updated
-      if (response.graph_updated) {
-        await loadGraph();
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error);
-      const errorMessage: ChatMessage = {
-        role: 'assistant',
-        content: 'Sorry, there was an error processing your message. Please try again.',
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleClearMemory = async () => {
-    if (!selectedCaseId) return;
-    try {
-      await api.clearGraph(selectedCaseId);
-      setGraphNodes([]);
-      setGraphEdges([]);
-      // Reload case data to get fresh state
-      await loadCaseData(selectedCaseId);
-    } catch (error) {
-      console.error('Failed to clear graph:', error);
-    }
-  };
-
-  const handleCreateCase = async (title: string) => {
-    try {
-      const newCase = await api.createCase(title);
-      setCases((prev) => [newCase, ...prev]);
-      setSelectedCaseId(newCase.id);
-      setMessages([]);
-      setGraphNodes([]);
-      setGraphEdges([]);
-    } catch (error) {
-      console.error('Failed to create case:', error);
-    }
-  };
-
-  const handleDeleteCase = async (caseId: number) => {
-    try {
-      await api.deleteCase(caseId);
-      setCases((prev) => prev.filter((c) => c.id !== caseId));
-      if (selectedCaseId === caseId) {
-        const remaining = cases.filter((c) => c.id !== caseId);
-        setSelectedCaseId(remaining.length > 0 ? remaining[0].id : null);
-      }
-    } catch (error) {
-      console.error('Failed to delete case:', error);
-    }
-  };
-
-  const handleSelectCase = (caseId: number) => {
-    if (caseId !== selectedCaseId) {
-      setSelectedCaseId(caseId);
-      setActiveTab('chat');
-    }
-  };
-
-  return (
-    <div className="flex h-screen bg-background text-foreground overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onClearMemory={handleClearMemory}
-        cases={cases}
-        selectedCaseId={selectedCaseId}
-        onSelectCase={handleSelectCase}
-        onCreateCase={handleCreateCase}
-        onDeleteCase={handleDeleteCase}
-        isCasesLoading={isCasesLoading}
-      />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="border-b border-border bg-background">
-          <div className="px-6 py-3">
-            <h1 className="text-3xl font-bold text-foreground">
-              {activeTab === 'chat' ? 'Investigation' : 'Evidence Board'}
-            </h1>
-            {selectedCaseId && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Case: {cases.find(c => c.id === selectedCaseId)?.title || 'Loading...'}
-              </p>
-            )}
-          </div>
-        </header>
-
-        {/* Content Area */}
-        <main className="flex-1 overflow-hidden">
-          {!selectedCaseId ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center text-muted-foreground">
-                <h3 className="text-xl font-bold mb-2">No Case Selected</h3>
-                <p className="text-sm">Create a new case or select an existing one to start investigating.</p>
-              </div>
-            </div>
-          ) : activeTab === 'chat' ? (
-            <Chat
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              isLoading={isLoading}
-            />
-          ) : (
-            <GraphView nodes={graphNodes} edges={graphEdges} />
-          )}
-        </main>
-      </div>
-    </div>
-  );
+function GuestOnly({ children }: { children: ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { search } = useLocation();
+  if (isLoading) return <FullScreenLoader />;
+  // A plan picked on the pricing page carries through sign-up straight into checkout.
+  const plan = new URLSearchParams(search).get('plan');
+  const target = plan === 'monthly' || plan === 'yearly' ? `/app/billing?checkout=${plan}` : '/app';
+  return isAuthenticated ? <Navigate to={target} replace /> : <>{children}</>;
 }
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <AppContent />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+          <BillingProvider>
+          <Suspense fallback={<FullScreenLoader />}>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/terms" element={<Legal page="terms" />} />
+              <Route path="/privacy" element={<Legal page="privacy" />} />
+              <Route path="/refunds" element={<Legal page="refunds" />} />
+              <Route path="/shipping" element={<Legal page="shipping" />} />
+              <Route path="/contact" element={<Legal page="contact" />} />
+              <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
+              <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
+              <Route path="/app/billing" element={<Protected><Billing /></Protected>} />
+              <Route path="/app" element={<Protected><Workspace /></Protected>} />
+              <Route path="/app/:caseId" element={<Protected><Workspace /></Protected>} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+            <UpgradeModal />
+            <WelcomeProModal />
+          </Suspense>
+          </BillingProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
   );
 }
-
-export default App;

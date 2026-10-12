@@ -1,9 +1,16 @@
-# Dependencies - collaborators will install these
+# Dependencies
 node_modules/
 venv/
+.venv/
 
-# Environment variables - contains API keys
+# Secrets
 .env
+.env.local
+
+# Local databases - contain user accounts and case data, never commit
+*.db
+*.db-journal
+*.sqlite
 
 # Python bytecode
 __pycache__/

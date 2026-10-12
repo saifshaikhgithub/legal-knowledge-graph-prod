@@ -1,119 +1,60 @@
-# Crime Investigation GPT 🕵️‍♂️
+# Sentinel - AI Case Intelligence
 
-An AI-powered crime investigation assistant that builds dynamic knowledge graphs from investigation data. Uses Google's Gemini AI to extract entities, relationships, and provide intelligent case analysis.
+Sentinel (formerly *Crime Investigation GPT*) is an AI analyst for criminal investigators. Feed it witness statements,
+reports, transcripts and scene photos; it builds a live **evidence graph** and **timeline**, reasons through the case with
+the detective, and produces a scored **intelligence brief** - persons of interest, competing hypotheses, contradictions,
+evidence gaps and next steps.
 
-## 🌟 Features
+## Features
 
-- **Interactive Chat Interface** - ChatGPT-like UI for natural conversation
-- **Dynamic Knowledge Graph** - Real-time visualization of entities and relationships
-- **Entity Extraction** - Automatically extracts people, locations, objects, events, and organizations
-- **Relationship Mapping** - Intelligently connects entities with various relationship types
-- **File Upload** - Supports PDF, DOCX, and TXT evidence files
-- **Voice Input** - Speech-to-text for hands-free operation
-- **Graph Interaction** - Drag nodes, highlight connections, explore relationships
-- **Smart Deduplication** - Prevents duplicate entities across the investigation
+| | |
+|---|---|
+| **Investigate** | Streaming analyst chat with a visible reasoning trace, conversation memory, voice dictation and drag-and-drop evidence |
+| **Evidence Board** | Force-directed graph of people, places, vehicles, weapons, organisations and communications. Directed, multi-relationship, with supporting quotes and confidence. Investigators can merge duplicates, retype or remove entities |
+| **Timeline** | Times and dates extracted from every message and document, sorted into one chronology |
+| **Case Brief** | Motive / means / opportunity scoring, hypotheses with evidence for and against, contradictions, leads, next steps |
+| **Evidence Locker** | PDF, DOCX, TXT/CSV/logs and images (described by a vision model). Every file is SHA-256 fingerprinted |
+| **Case file export** | Markdown report: brief, entity register, relationships, timeline, evidence register with hashes, full log |
+| **Governance** | Append-only audit log, rate limiting, optional agency invite codes, presumption-of-innocence guardrails in prompts |
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-crime-investigation-gpt/
-├── backend/               # FastAPI backend
-│   ├── main.py           # API server
-│   ├── modules/
-│   │   ├── llm_engine.py      # Gemini AI integration
-│   │   ├── graph_manager.py   # Knowledge graph logic
-│   └── requirements.txt
-│
-└── frontend/             # React + TypeScript frontend
-    ├── src/
-    │   ├── components/
-    │   │   ├── Chat.tsx        # Chat interface
-    │   │   ├── GraphView.tsx   # Knowledge graph visualization
-    │   │   └── Sidebar.tsx     # Navigation
-    └── package.json
+frontend/  React 19 + Vite + Tailwind + framer-motion + react-force-graph-2d   (Vercel)
+backend/   FastAPI (async) + SQLAlchemy + NetworkX                            (Render / any container host)
+  config.py              all settings from env
+  modules/llm_engine.py  OpenAI-compatible client -> NVIDIA NIM (hosted or self-hosted)
+  modules/graph_manager.py  MultiDiGraph knowledge graph, entity resolution, timeline
+  routers/investigation.py  SSE chat, evidence, graph, brief, report
 ```
 
-## 🚀 Quick Start
+The LLM layer speaks the OpenAI API, so the same code runs on NVIDIA's free hosted endpoint today and on an
+**on-premise, air-gapped NIM deployment** for agencies (set `LLM_BASE_URL`).
 
-### Prerequisites
-
-- Python 3.9+
-- Node.js 18+
-- Google Gemini API Key
-
-### Backend Setup
+## Run locally
 
 ```bash
+# Backend
 cd backend
-
-# Create virtual environment
-python -m venv venv
-.\venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Linux/Mac
-
-# Install dependencies
+python -m venv venv && venv\Scripts\activate      # source venv/bin/activate on macOS/Linux
 pip install -r requirements.txt
+copy .env.example .env                            # then put your NVIDIA_API_KEY in it
+uvicorn main:app --reload                         # http://localhost:8000/docs
 
-# Create .env file
-echo GOOGLE_API_KEY=your_api_key_here > .env
-
-# Run backend
-uvicorn main:app --reload
-```
-
-Backend runs on `http://localhost:8000`
-
-### Frontend Setup
-
-```bash
+# Frontend
 cd frontend
-
-# Install dependencies
 npm install
-
-# Run development server
-npm run dev
+npm run dev                                       # http://localhost:5173
 ```
 
-Frontend runs on `http://localhost:5173`
+Get a free key at [build.nvidia.com](https://build.nvidia.com). Models are set with `REASONING_MODEL`,
+`EXTRACTION_MODEL` and `VISION_MODEL` - no code change needed when NVIDIA rotates its catalogue.
 
-## 📊 Usage
+Without a key the app still runs (offline mode): cases, evidence storage and the UI work, AI features explain that they are offline.
 
-1. **Start Investigation**: Open the app and click on "Investigation Room"
-2. **Add Evidence**: Type details or upload files (PDF/DOCX/TXT)
-3. **Use Voice**: Click the microphone icon for hands-free input
-4. **Explore Graph**: Switch to "Evidence Graph" to see connections
-5. **Interact**: 
-   - Click nodes to highlight relationships
-   - Drag nodes to reorganize the graph
-   - Click the same node again to deselect
+## Deploy
 
-## 🔑 API Endpoints
+See [.agent/workflows/deploy.md](.agent/workflows/deploy.md). Short version: Postgres on Neon (free), API on Render
+via `render.yaml`, frontend on Vercel with `VITE_API_URL` pointing at the API.
 
-- `POST /api/chat` - Send investigation updates
-- `GET /api/graph` - Get current knowledge graph
-- `POST /api/upload` - Upload evidence files
-- `POST /api/clear` - Clear investigation data
-
-## 🛠️ Technologies
-
-**Backend:**
-- FastAPI - Modern Python web framework
-- LangChain - LLM orchestration
-- Google Gemini - AI model (gemini-2.0-flash)
-- NetworkX - Graph data structure
-
-**Frontend:**
-- React 18 - UI framework
-- TypeScript - Type safety
-- ReactFlow - Graph visualization
-- Tailwind CSS - Styling
-- Shadcn/UI - Component library
-
-## 📝 License
-
-MIT License - feel free to use this project for your own investigations!
-
-## 🤝 Contributing
-
-Contributions welcome! Please open an issue or PR.
+> AI-assisted analysis. All findings must be independently verified by a qualified investigator.

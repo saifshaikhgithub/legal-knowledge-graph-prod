@@ -3,161 +3,134 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light: "case file paper" */
   :root {
-    /* Light theme - Exact ChatGPT colors */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 13%;
-
-    --muted: 0 0% 97%;
-    --muted-foreground: 0 0% 45%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
-
-    --border: 0 0% 88%;
-    --input: 0 0% 93%;
-
+    --background: 40 20% 97%;
+    --foreground: 222 30% 10%;
+    --surface: 0 0% 100%;
+    --surface-2: 40 15% 94%;
+    --surface-3: 40 12% 90%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 13%;
-
-    --primary: 171 77% 34%;
+    --card-foreground: 222 30% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 30% 10%;
+    --muted: 40 12% 92%;
+    --muted-foreground: 220 9% 40%;
+    --border: 40 10% 85%;
+    --input: 40 10% 82%;
+    --primary: 32 95% 44%;
     --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 97%;
-    --secondary-foreground: 0 0% 13%;
-
-    --accent: 0 0% 97%;
-    --accent-foreground: 0 0% 13%;
-
-    --destructive: 0 84% 60%;
+    --ai: 192 85% 34%;
+    --ai-foreground: 0 0% 100%;
+    --secondary: 40 12% 92%;
+    --secondary-foreground: 222 30% 10%;
+    --accent: 40 15% 92%;
+    --accent-foreground: 222 30% 10%;
+    --destructive: 0 72% 48%;
     --destructive-foreground: 0 0% 100%;
-
-    --ring: 171 77% 34%;
-
-    --radius: 0.5rem;
+    --success: 152 60% 36%;
+    --ring: 32 95% 44%;
+    --radius: 0.7rem;
+    --grid: 222 20% 50% / 0.07;
   }
 
+  /* Dark: "operations center" */
   .dark {
-    /* Dark theme - Exact ChatGPT colors */
-    --background: 217 33% 17%;
-    --foreground: 0 0% 95%;
-
-    --muted: 217 33% 21%;
-    --muted-foreground: 0 0% 65%;
-
-    --popover: 217 33% 17%;
-    --popover-foreground: 0 0% 95%;
-
-    --border: 217 20% 25%;
-    --input: 217 20% 25%;
-
-    --card: 217 33% 21%;
-    --card-foreground: 0 0% 95%;
-
-    --primary: 171 77% 34%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 217 33% 21%;
-    --secondary-foreground: 0 0% 95%;
-
-    --accent: 217 33% 21%;
-    --accent-foreground: 0 0% 95%;
-
-    --destructive: 0 84% 60%;
+    --background: 222 32% 4%;
+    --foreground: 210 30% 94%;
+    --surface: 222 28% 7%;
+    --surface-2: 222 24% 10%;
+    --surface-3: 222 20% 14%;
+    --card: 222 28% 7%;
+    --card-foreground: 210 30% 94%;
+    --popover: 222 26% 9%;
+    --popover-foreground: 210 30% 94%;
+    --muted: 222 20% 13%;
+    --muted-foreground: 215 14% 60%;
+    --border: 222 18% 16%;
+    --input: 222 18% 20%;
+    --primary: 38 92% 55%;
+    --primary-foreground: 30 40% 8%;
+    --ai: 188 90% 52%;
+    --ai-foreground: 200 50% 8%;
+    --secondary: 222 20% 13%;
+    --secondary-foreground: 210 30% 94%;
+    --accent: 222 20% 14%;
+    --accent-foreground: 210 30% 94%;
+    --destructive: 0 80% 60%;
     --destructive-foreground: 0 0% 100%;
-
-    --ring: 217 20% 25%;
+    --success: 152 65% 48%;
+    --ring: 38 92% 55%;
+    --grid: 210 40% 80% / 0.045;
   }
-}
 
-@layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
+  html, body, #root { height: 100%; }
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
   }
+  ::selection { background: hsl(var(--primary) / 0.3); }
 }
 
-/* Custom scrollbar - subtle like ChatGPT */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
-}
-
-/* Smooth animations */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+@layer components {
+  .glass {
+    background: hsl(var(--surface) / 0.72);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .grid-bg {
+    background-image:
+      linear-gradient(hsl(var(--grid)) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid)) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
+  .glow-primary { box-shadow: 0 0 0 1px hsl(var(--primary) / .35), 0 8px 30px -8px hsl(var(--primary) / .45); }
+  .glow-ai { box-shadow: 0 0 0 1px hsl(var(--ai) / .3), 0 8px 30px -10px hsl(var(--ai) / .5); }
+  .text-gradient {
+    background: linear-gradient(100deg, hsl(var(--foreground)) 20%, hsl(var(--primary)) 60%, hsl(var(--ai)) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
   }
-  to {
-    opacity: 1;
+  .tape {
+    background: repeating-linear-gradient(-45deg, hsl(var(--primary)) 0 14px, hsl(222 32% 6%) 14px 28px);
   }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
+  .shimmer-text {
+    background: linear-gradient(90deg, hsl(var(--muted-foreground)) 0%, hsl(var(--foreground)) 50%, hsl(var(--muted-foreground)) 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    @apply animate-shimmer;
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  .label-mono { @apply font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground; }
 }
 
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out forwards;
+/* Markdown answers from the analyst */
+.prose-intel { @apply text-[14.5px] leading-relaxed text-foreground/90; }
+.prose-intel h1, .prose-intel h2 {
+  @apply font-display text-[13px] font-semibold uppercase tracking-[0.12em] text-primary mt-5 mb-2 first:mt-0 flex items-center gap-2;
 }
+.prose-intel h2::before { content: ""; @apply inline-block h-3 w-1 rounded-full bg-primary; }
+.prose-intel h3 { @apply font-semibold text-foreground mt-4 mb-1.5; }
+.prose-intel p { @apply mb-3 last:mb-0; }
+.prose-intel ul { @apply mb-3 space-y-1.5 pl-1; }
+.prose-intel ul > li { @apply relative pl-5; }
+.prose-intel ul > li::before { content: ""; @apply absolute left-1 top-[0.6em] h-1.5 w-1.5 rounded-sm bg-primary/70; }
+.prose-intel ol { @apply mb-3 list-decimal space-y-1.5 pl-5 marker:font-mono marker:text-primary; }
+.prose-intel strong { @apply font-semibold text-foreground; }
+.prose-intel code { @apply rounded bg-surface-3 px-1.5 py-0.5 font-mono text-[12.5px]; }
+.prose-intel pre { @apply my-3 overflow-x-auto rounded-lg border bg-surface-2 p-3; }
+.prose-intel pre code { @apply bg-transparent p-0; }
+.prose-intel blockquote { @apply my-3 border-l-2 border-ai pl-3 italic text-muted-foreground; }
+.prose-intel table { @apply my-3 w-full border-collapse text-sm; }
+.prose-intel th { @apply border-b px-2 py-1.5 text-left font-mono text-[11px] uppercase tracking-wider text-muted-foreground; }
+.prose-intel td { @apply border-b border-border/60 px-2 py-1.5; }
+.prose-intel a { @apply text-ai underline-offset-2 hover:underline; }
+.prose-intel hr { @apply my-4; }
 
-@keyframes voice-wave {
-  0%, 100% { height: 4px; }
-  50% { height: 16px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.22); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
-
-.animate-voice-wave {
-  animation: voice-wave 1s ease-in-out infinite;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.2s ease-out;
-}
-
-/* Smooth transitions for theme switching */
-* {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
