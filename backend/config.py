@@ -19,7 +19,7 @@ IS_PRODUCTION = ENVIRONMENT == "production"
 
 # ---- LLM (NVIDIA NIM / any OpenAI-compatible endpoint) ----
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://integrate.api.nvidia.com/v1")
-LLM_API_KEY = os.getenv("NVIDIA_API_KEY") or os.getenv("LLM_API_KEY") or ""
+LLM_API_KEY = (os.getenv("NVIDIA_API_KEY") or os.getenv("LLM_API_KEY") or "").strip()
 # Deep reasoning: case analysis, briefs, suspect assessment
 REASONING_MODEL = os.getenv("REASONING_MODEL", "nvidia/nemotron-3-super-120b-a12b")
 # Structured extraction: entities / relations / timeline as JSON
